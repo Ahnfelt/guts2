@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+    <head>
+        <title></title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+        <script>
+            function now() {
+                return new Date().getTime() / 1000;
+            }
+        
+            jQuery(function($) {
+                var viewport = $('body');
+                var foreground = $('#foreground');
+                var screenWidth = screen.width;
+                var screenHeight = screen.height;
+                var cursor = $('#cursor');
+                var canvases = $('#canvases');
+                
+                canvases.mousemove(function(event) {
+                    var x = event.pageX - scrollX;
+                    var y = event.pageY - scrollY;
+                });
+                canvases.mousedown(function(event) {
+                    if(event.which == 1) alert("left mouse button");
+                    event.preventDefault();
+                });
+                viewport.keydown(function(event) {
+                    if(event.which == 37) alert("left arrow");
+                    if(event.which == 38) alert("up arrow");
+                    if(event.which == 39) alert("right arrow");
+                    if(event.which == 40) alert("down arrow");
+                });
+                viewport.keyup(function(event) {
+                    if(event.which == 37) alert("left arrow");
+                    if(event.which == 38) alert("up arrow");
+                    if(event.which == 39) alert("right arrow");
+                    if(event.which == 40) alert("down arrow");
+                });
+                
+                // Make sure the canvas is large enough to support fullscreen
+                foreground.
+                    attr('width', screenWidth).
+                    attr('height', screenHeight);
+                
+                var projectileImage = new Image();
+                projectileImage.src = 'images/flame2.png';
+                
+                projectileImage.onload = function() {
+                
+                function drawImage(g, image, alpha, x, y, scale, rotate, sourceX, sourceY, sourceWidth, sourceHeight) {
+                    g.save();
+                    g.globalAlpha = alpha != null ? alpha : 1.0;
+                    g.globalCompositeOperation = 'lighter';
+                    g.translate(x, y);
+                    if(scale != null) g.scale(scale, scale);
+                    if(rotate != null) g.rotate(rotate);
+                    if(sourceX == null) {
+                        g.drawImage(image, 0, 0);
+                    } else {
+                        g.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+                    }
+                    g.restore();
+                }
+                
+                var sprites = {};
+                function newSimpleAnimation(image, frames, secondsPerFrame, width, height, offsetX, offsetY) {
+                    return {
+                        image: image,
+                        frames: frames != null ? frames : 1,
+                        secondsPerFrame: secondsPerFrame != null ? secondsPerFrame : 0.5,
+                        width: width != null ? width : image.width / frames,
+                        height: height != null ? height : image.height,
+                        offsetX: offsetX != null ? offsetX : 0,
+                        offsetY: offsetY != null ? offsetY : 0
+                    };
+                }
+                function renderSimpleAnimation(g, time, sprite) {
+                    var elapsed = time - sprite.started;
+                    var x = sprite.x + Math.cos(sprite.angle) * sprite.magnitude * elapsed;
+                    var y = sprite.y + Math.sin(sprite.angle) * sprite.magnitude * elapsed;
+                    var frame = Math.floor(elapsed / sprite.animation.secondsPerFrame) % sprite.animation.frames;
+                    var frameX = sprite.animation.offsetX + frame * sprite.animation.width;
+                    drawImage(g, sprite.animation.image, null, x, y, null, 
+                        sprite.angle, frameX, sprite.animation.offsetY, sprite.animation.width, sprite.animation.height);
+                }
+                
+                
+                function step() {
+                    
+                }
+                
+                function redraw(time) {
+                    var g = foreground.get(0).getContext('2d');
+                    g.clearRect(0, 0, screenWidth, screenHeight);
+                    $.each(sprites, function(id, sprite) {
+                        renderSimpleAnimation(g, time, sprite);
+                    });
+                }
+                
+                var millisecondsPerFrame = 25;
+                var oldTime = now();
+                function update() {
+                    var newTime = now();
+                    while(oldTime < newTime) {
+                        step();
+                        oldTime += millisecondsPerFrame;
+                    }
+                    redraw(newTime);
+                }
+                setInterval(update, millisecondsPerFrame);
+                
+                for(var i = 0; i < 100; i++) {
+                    sprites['blah' + i] = {
+                        x: screenWidth / 2,
+                        y: screenHeight / 2,
+                        angle: Math.random() * Math.PI * 2,
+                        magnitude: 100.0 + 50.9 * Math.random() * Math.random(),
+                        started: now(),
+                        animation: newSimpleAnimation(projectileImage, 1, 0.10 + 0.20 * Math.random())//, 14, 12)
+                    };
+                }
+                
+                }
+            });
+        </script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #000000;
+            }
+            #canvases {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                overflow: hidden;
+                cursor: crosshair;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="canvases">
+            <canvas id="foreground" width="100" height="100"></canvas>
+        </div>
+    </body>
+</html>
+
