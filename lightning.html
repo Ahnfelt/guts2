@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+    <head>
+        <title></title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+        <script>
+            function now() {
+                return new Date().getTime() / 1000;
+            }
+        
+            function normal() {
+                var u = Math.random();
+                var v = Math.random();
+                return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+            }
+
+            jQuery(function($) {
+                var foreground = $('#foreground');
+                var screenWidth = screen.width;
+                var screenHeight = screen.height;
+
+                // Make sure the canvas is large enough to support fullscreen
+                foreground.
+                    attr('width', screenWidth).
+                    attr('height', screenHeight);
+                
+
+                var lightning = []
+                for (var i = 0; i < 100; i++) lightning.push(0);
+
+                function drawLightning(g) {
+                    g.save();
+                    g.translate(100, 400);
+                    g.globalCompositeOperation = 'lighter';
+                    g.strokeStyle = "#44f";
+                    var x = 0;
+                    var y = 0;
+                    g.beginPath();
+                    g.moveTo(x, y);
+                    $.each(lightning, function (index, y2) {
+                        x += 10;
+                        g.lineTo(x, y2);
+                    });
+                    g.lineTo(x + 10, 0);
+                    g.lineWidth=1.5;
+                    g.stroke();
+                    g.closePath();
+                    g.restore();
+                }
+
+                function updateLightning() {
+                    if (Math.random() < 0.5) {
+                        updateLightning1(1);
+                    } else {
+                        updateLightning2(3);
+                    }
+                }
+
+                function updateLightning1(volatility) {
+                    lightning = $.map(lightning, function (y) {return y + normal() * volatility});
+                }
+
+                function updateLightning2(volatility) {
+                    lightning[0] = normal() * volatility;
+                    for (var i = 1; i < lightning.length; i++) {
+                        var lastY = lightning[i - 1];
+                        var a = lastY / (100 - i);
+                        lightning[i] = lastY + (normal() * volatility) - a;
+                    }
+                }
+
+                function step() {
+                }
+
+                function redraw(time) {
+                    var g = foreground.get(0).getContext('2d');
+                    //g.clearRect(0, 0, screenWidth, screenHeight);
+                    g.globalCompositeOperation = 'destination-out';
+                    g.fillStyle = "rgba(0, 0, 0, 0.1)";
+                    g.fillRect(0, 0, screenWidth, screenHeight);
+                    drawLightning(g);
+                    updateLightning();
+                }
+
+                var millisecondsPerFrame = 25;
+                var oldTime = now();
+                function update() {
+                    var newTime = now();
+                    while(oldTime < newTime) {
+                        step();
+                        oldTime += millisecondsPerFrame;
+                    }
+                    redraw(newTime);
+                }
+                setInterval(update, millisecondsPerFrame);
+
+            });
+        </script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #000000;
+            }
+            #canvases {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                overflow: hidden;
+                cursor: crosshair;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="canvases">
+            <canvas id="foreground" width="100" height="100"></canvas>
+        </div>
+    </body>
+</html>
+
